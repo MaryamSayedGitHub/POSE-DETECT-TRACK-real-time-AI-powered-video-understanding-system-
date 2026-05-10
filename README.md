@@ -5,7 +5,8 @@ PoseGuard is a real-time AI-powered Computer Vision system for **pose estimation
 
 The system supports both uploaded videos and live webcam streams while generating annotated outputs, tracking IDs, and analytics reports.
 <img width="1665" height="816" alt="Screenshot 2026-05-10 131428" src="https://github.com/user-attachments/assets/a4f65d18-866e-40ac-80ab-788029410a3a" />
-![Uploading image.png…]()
+<img width="532" height="870" alt="Screenshot 2026-05-10 132650" src="https://github.com/user-attachments/assets/010f8b44-d3b5-400e-bae4-e61d5c9d90eb" />
+
 
 
 ---
