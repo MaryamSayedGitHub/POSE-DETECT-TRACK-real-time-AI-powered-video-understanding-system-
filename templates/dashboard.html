@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Pose Estimation · Detection · Tracking</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- NAVBAR -->
+  <!-- FIX #6: Added aria-label to distinguish this nav from others on the page -->
+  <nav class="navbar" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="/" class="nav-brand">
+        <div class="brand-icon">
+          <!-- FIX #2: Decorative SVG marked aria-hidden + focusable=false -->
+          <svg viewBox="0 0 24 24" fill="var(--accent)" aria-hidden="true" focusable="false">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+          </svg>
+        </div>
+        <div>PoseGuard<span class="brand-tag">POSE · DETECT · TRACK v2.0</span></div>
+      </a>
+      <!-- FIX #6: Added role="list" for screen reader clarity -->
+      <ul class="nav-links" role="list">
+        <li><a href="/">Home</a></li>
+        <li><a href="/upload">Upload</a></li>
+        <li><a href="/live">Live Feed</a></li>
+        <li><a href="/dashboard" class="active">Dashboard</a></li>
+      </ul>
+      <div class="nav-status"><div class="status-dot"></div>SYSTEM ONLINE</div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+
+      <!-- PAGE HEADER -->
+      <div class="page-header">
+        <div class="breadcrumb"><a href="/">HOME</a> / <span>DASHBOARD</span></div>
+        <h2>Session Dashboard</h2>
+      </div>
+
+      {% if report %}
+      <!-- TOP STATS from latest report -->
+      {% set score = report.safety_score | default(100) %}
+      {% set score_cls = 'safe' if score >= 80 else ('warn' if score >= 50 else 'danger') %}
+
+      <div class="stats-row stats-row--top">
+        <div class="stat-card {{ score_cls }}" id="safetyScore" data-score="{{ score }}">
+          <div class="stat-label">Session Score</div>
+          <div class="stat-value {{ score_cls }}">{{ score }}</div>
+          <div class="stat-delta">Latest session</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-label">Total Events</div>
+          <div class="stat-value danger">{{ report.total_alerts | default(0) }}</div>
+          <div class="stat-delta">Logged detections</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Frames Processed</div>
+          <div class="stat-value accent">{{ report.total_frames_processed | default(report.total_frames) | default(0) }}</div>
+          <div class="stat-delta">{{ '%.1f'|format(report.video_duration_seconds | default(0)) }}s video</div>
+        </div>
+        <div class="stat-card safe">
+          <div class="stat-label">Session</div>
+          <div class="stat-value stat-value--sm">
+            {{ report.timestamp[:10] if report.timestamp else '—' }}
+          </div>
+          <div class="stat-delta">{{ report.input_file | default('—') | truncate(24, true) }}</div>
+        </div>
+      </div>
+
+      <!-- TWO-COLUMN LAYOUT -->
+      <div class="grid-2 grid-2--dashboard">
+
+        <!-- Activity breakdown chart -->
+        <div class="panel">
+          <div class="panel-header">
+            <span class="panel-title">Activity Breakdown</span>
+            <span class="mono label-sm">LATEST SESSION</span>
+          </div>
+          <div class="chart-area">
+            <!-- FIX #1: Canvas has accessible fallback content -->
+            <canvas id="activityChart">
+              Activity breakdown chart — your browser does not support the HTML canvas element.
+            </canvas>
+          </div>
+          <!-- FIX #4: All <th> elements have scope="col" -->
+          <table class="act-table act-table--spaced">
+            <thead>
+              <tr>
+                <th scope="col">Activity</th>
+                <th scope="col">Count</th>
+                <th scope="col">%</th>
+                <th scope="col">Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set pcts = report.activity_percentages | default({}) %}
+              {% set stats = report.activity_statistics | default({}) %}
+              {% for name, count in stats.items() %}
+              {% set pct = pcts.get(name, 0) | round(1) %}
+              {% set bar_cls = 'danger' if 'Unsafe' in name else ('warn' if name in ['Squatting','Lifting'] else '') %}
+              <tr>
+                <td>{{ name.replace('_', ' ') }}</td>
+                <td class="mono">{{ count }}</td>
+                <td class="mono">{{ pct }}%</td>
+                <td>
+                  <div class="act-bar-wrap">
+                    <!-- data-pct keeps Jinja value out of CSS context, width set by JS below -->
+                    <div class="act-bar {{ bar_cls }}" data-pct="{{ pct }}"></div>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Score meter + recent events -->
+        <div class="panel-stack">
+
+          <div class="panel panel--centered">
+            <div class="panel-header"><span class="panel-title">Session Score</span></div>
+            <div class="safety-meter">
+              <div class="meter-ring">
+                <!-- FIX #2: Decorative SVG marked aria-hidden -->
+                <svg width="140" height="140" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+                  <circle class="meter-track" cx="60" cy="60" r="50"/>
+                  <circle class="meter-fill" cx="60" cy="60" r="50"/>
+                </svg>
+                <div class="meter-value">
+                  <span id="meterNum">{{ score }}</span>
+                  <!-- FIX #3: Replaced <small> with semantic <span> + class -->
+                  <span class="meter-unit">/ 100</span>
+                </div>
+              </div>
+            </div>
+            <p class="meter-status">
+              {% if score >= 80 %}
+                <span class="safe">✓ Strong tracking consistency</span>
+              {% elif score >= 50 %}
+                <span class="warn">⚠ Mixed confidence across frames</span>
+              {% else %}
+                <span class="danger">✕ Low confidence / unstable tracking</span>
+              {% endif %}
+            </p>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Recent Events</span>
+              <span class="badge badge-danger">{{ report.total_alerts | default(0) }}</span>
+            </div>
+            {% set alerts = report.alerts | default([]) %}
+            {% if alerts %}
+              {% for a in alerts | reverse %}
+              <div class="alert-item">
+                <!-- FIX #2: Icon SVG is decorative — aria-hidden + role="img" with title for non-decorative use -->
+                <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     aria-hidden="true" focusable="false">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div class="alert-text">
+                  <div class="alert-title">{{ a.activity }} — Person #{{ a.person_id }}</div>
+                  <div class="alert-meta">Frame {{ a.frame }} · {{ a.timestamp[:19].replace('T',' ') }}</div>
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="empty-alerts">No alerts in this session</div>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+
+      {% else %}
+      <!-- No data yet -->
+      <div class="empty-state">
+        <!-- FIX #2: Decorative SVG aria-hidden -->
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--border2)" stroke-width="1.5"
+             aria-hidden="true" focusable="false" class="empty-icon">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <div class="empty-title">NO ANALYSIS DATA YET</div>
+        <p class="empty-body">Upload a video or start a live session to see analytics here.</p>
+        <div class="empty-actions">
+          <a href="/upload" class="btn btn-primary">Upload Video</a>
+          <a href="/live" class="btn btn-outline">Live Feed</a>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- ALL REPORTS TABLE -->
+      <div class="section-head mt-32">
+        <div class="section-title">All Reports</div>
+        <a href="/upload" class="btn btn-outline btn-sm">+ New Analysis</a>
+      </div>
+
+      <div class="panel mb-24">
+        <!-- FIX #4: Added scope="col" to all report table headers -->
+        <table class="report-table report-table--full">
+          <thead>
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">File</th>
+              <th scope="col">Score</th>
+              <th scope="col">Events</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="reportsBody">
+            <tr>
+              <td colspan="5" class="table-loading">Loading reports...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <span>POSEGUARD © 2024 — POSE ESTIMATION · DETECTION · TRACKING</span>
+      <span>YOLOv8-POSE · FLASK · OPENCV</span>
+    </div>
+  </footer>
+
+</div>
+
+{% if report %}
+<!-- JSON data island: type="application/json" is inert, no JS/CSS parser touches it,
+     so Jinja syntax inside is invisible to the linter. -->
+<script type="application/json" id="report-data">{{ report | tojson }}</script>
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+  window.addEventListener('load', () => {
+    // Safely read report data from the JSON island — no Jinja inside a JS block
+    const dataEl = document.getElementById('report-data');
+    window.reportData = dataEl ? JSON.parse(dataEl.textContent) : null;
+
+    // Apply bar widths from data-pct attributes — keeps Jinja out of CSS context
+    document.querySelectorAll('.act-bar[data-pct]').forEach(function(bar) {
+      bar.style.width = bar.dataset.pct + '%';
+    });
+
+    // Draw activity chart
+    const canvas = document.getElementById('activityChart');
+    if (canvas && window.reportData) {
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      drawChart(canvas, window.reportData);
+    }
+
+    // Init safety meter
+    const scoreEl = document.getElementById('safetyScore');
+    if (scoreEl) updateMeter(parseFloat(scoreEl.dataset.score));
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PoseGuard — Pose Estimation · Detection · Tracking</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="/" class="nav-brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+        </div>
+        <div>
+          PoseGuard
+          <span class="brand-tag">POSE · DETECT · TRACK v2.0</span>
+        </div>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="/" class="active">Home</a></li>
+        <li><a href="/upload">Upload</a></li>
+        <li><a href="/live">Live Feed</a></li>
+        <li><a href="/dashboard">Dashboard</a></li>
+      </ul>
+
+      <div class="nav-status">
+        <div class="status-dot"></div>
+        SYSTEM ONLINE
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-grid-bg"></div>
+    <div class="container">
+      <div class="hero-label">Computer Vision Pipeline</div>
+      <h1>Real-Time<br><span>Pose</span> Estimation<br>& Tracking</h1>
+      <p class="hero-sub">
+        End-to-end video understanding: pose estimation, object detection, and multi-object tracking
+        with annotated outputs and session analytics.
+      </p>
+      <div class="hero-actions">
+        <a href="/upload" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          Analyze Video
+        </a>
+        <a href="/live" class="btn btn-outline">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+          Live Webcam
+        </a>
+        <a href="/dashboard" class="btn btn-outline">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAT CARDS -->
+  <div class="container">
+    <div class="stats-row">
+      <div class="stat-card safe">
+        <div class="stat-label">Pose Model</div>
+        <div class="stat-value safe">YOLO</div>
+        <div class="stat-delta">Pose estimation pipeline</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Features</div>
+        <div class="stat-value accent">3</div>
+        <div class="stat-delta">Pose · Detect · Track</div>
+      </div>
+      <div class="stat-card warn">
+        <div class="stat-label">Inference</div>
+        <div class="stat-value warn">Live</div>
+        <div class="stat-delta">Webcam + video upload</div>
+      </div>
+      <div class="stat-card danger">
+        <div class="stat-label">Multi-Target</div>
+        <div class="stat-value danger">∞</div>
+        <div class="stat-delta">IDs over time</div>
+      </div>
+    </div>
+
+    <!-- FEATURE GRID -->
+    <div class="section-head">
+      <div class="section-title">Capabilities</div>
+    </div>
+
+    <div class="features">
+      <a href="/upload" class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        </div>
+        <h3>Video Analysis</h3>
+        <p>Upload MP4, AVI, MOV, or MKV footage. Frame-by-frame pose estimation with annotated output video and detailed JSON reports.</p>
+        <div class="feature-arrow">Analyze now →</div>
+      </a>
+
+      <a href="/live" class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <h3>Live Webcam</h3>
+        <p>Stream real-time pose estimation with IDs and movement tracking from a connected camera, plus live counters and session stats.</p>
+        <div class="feature-arrow">Start live →</div>
+      </a>
+
+      <a href="/dashboard" class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--safe)" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>Analytics Dashboard</h3>
+        <p>Review session metrics, activity breakdowns, and summary scores across all analyzed videos in one place.</p>
+        <div class="feature-arrow">View reports →</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <span>POSEGUARD © 2024 — POSE ESTIMATION · DETECTION · TRACKING</span>
+      <span>YOLOv8-POSE · FLASK · OPENCV</span>
+    </div>
+  </footer>
+
+</div>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

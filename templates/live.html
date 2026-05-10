@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Feed — Pose Estimation · Detection · Tracking</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="/" class="nav-brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="var(--accent)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+        </div>
+        <div>PoseGuard<span class="brand-tag">POSE · DETECT · TRACK v2.0</span></div>
+      </a>
+      <ul class="nav-links">
+        <li><a href="/">Home</a></li>
+        <li><a href="/upload">Upload</a></li>
+        <li><a href="/live" class="active">Live Feed</a></li>
+        <li><a href="/dashboard">Dashboard</a></li>
+      </ul>
+      <div class="nav-status"><div class="status-dot warn" id="liveIndicator"></div><span id="liveLabel">STANDBY</span></div>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+
+      <!-- PAGE HEADER -->
+      <div class="page-header">
+        <div class="breadcrumb"><a href="/">HOME</a> / <span>LIVE WEBCAM</span></div>
+        <h2>Live Pose Estimation & Tracking</h2>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex items-center gap-16 mb-24">
+        <button id="startBtn" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          Start Live Feed
+        </button>
+        <button id="stopBtn" class="btn btn-danger hidden">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><rect x="9" y="9" width="6" height="6"/></svg>
+          Stop Feed
+        </button>
+        <span class="mono" style="font-size:0.72rem;color:var(--text3)">Camera: /dev/video0 (default)</span>
+      </div>
+
+      <!-- Live Container -->
+      <div class="live-container">
+
+        <!-- Feed -->
+        <div>
+          <!-- Placeholder when not live -->
+          <div id="feedPlaceholder" class="feed-frame" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--text3)">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--border2)" stroke-width="1.5">
+              <path d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+            </svg>
+            <span class="mono" style="font-size:0.75rem;letter-spacing:0.15em">NO SIGNAL</span>
+            <span style="font-size:0.8rem">Click <strong style="color:var(--text)">Start Live Feed</strong> to begin</span>
+          </div>
+
+          <!-- Actual feed -->
+          <div id="feedWrapper" class="feed-frame hidden" style="position:relative">
+            <span class="feed-badge">● LIVE</span>
+            <img id="feedImg" src="" alt="Live feed" style="width:100%;height:100%;object-fit:cover" />
+          </div>
+
+          <!-- Frame stats bar -->
+          <div class="panel mt-16" style="display:flex;gap:32px;padding:14px 20px">
+            <div>
+              <div class="stat-label">Frame</div>
+              <div class="mono" id="frameNum" style="font-size:1rem;color:#fff">—</div>
+            </div>
+            <div>
+              <div class="stat-label">Persons</div>
+              <div class="mono" id="personCount" style="font-size:1rem;color:var(--accent)">—</div>
+            </div>
+            <div>
+              <div class="stat-label">Avg Speed</div>
+              <div class="mono" id="avgSpeed" style="font-size:1rem;color:#fff">—</div>
+            </div>
+            <div>
+              <div class="stat-label">Alerts</div>
+              <div class="mono" id="alertCount" style="font-size:1rem;color:var(--danger)">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="live-sidebar">
+
+          <!-- Session score (UI label only; backend value remains) -->
+          <div class="panel" style="text-align:center">
+            <div class="panel-header"><span class="panel-title">Session Score</span></div>
+            <div class="safety-meter">
+              <div class="meter-ring">
+                <svg width="120" height="120" viewBox="0 0 120 120">
+                  <circle class="meter-track" cx="60" cy="60" r="50"/>
+                  <circle class="meter-fill" cx="60" cy="60" r="50"/>
+                </svg>
+                <div class="meter-value">
+                  <span id="meterNum">100</span>
+                  <small>/ 100</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live stats -->
+          <div class="panel" id="statsPanel">
+            <div class="panel-header">
+              <span class="panel-title">Activity Stats</span>
+              <span class="mono" style="font-size:0.65rem;color:var(--text3)" id="statsTime">—</span>
+            </div>
+            <div style="color:var(--text3);font-size:0.83rem;text-align:center;padding:16px 0">
+              Start feed to see live statistics
+            </div>
+          </div>
+
+          <!-- Recent events -->
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Recent Events</span>
+              <span class="badge badge-danger" id="alertBadge">0</span>
+            </div>
+            <div id="alertFeed" style="min-height:80px;color:var(--text3);font-size:0.83rem;text-align:center;padding:16px 0">
+              No events detected
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <span>POSEGUARD © 2024 — POSE ESTIMATION · DETECTION · TRACKING</span>
+      <span>YOLOv8-POSE · FLASK · OPENCV</span>
+    </div>
+  </footer>
+
+</div>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+  // Extended live page logic
+  const startBtn      = document.getElementById('startBtn');
+  const stopBtn       = document.getElementById('stopBtn');
+  const feedImg       = document.getElementById('feedImg');
+  const feedWrapper   = document.getElementById('feedWrapper');
+  const feedPlaceholder = document.getElementById('feedPlaceholder');
+  const liveIndicator = document.getElementById('liveIndicator');
+  const liveLabel     = document.getElementById('liveLabel');
+  const meterNum      = document.getElementById('meterNum');
+  const alertFeed     = document.getElementById('alertFeed');
+  const alertBadge    = document.getElementById('alertBadge');
+  const statsTime     = document.getElementById('statsTime');
+
+  let statsInterval = null;
+  let shownAlerts = new Set();
+
+  startBtn.addEventListener('click', () => {
+    feedImg.src = '/api/webcam_feed?' + Date.now();
+    feedWrapper.classList.remove('hidden');
+    feedPlaceholder.style.display = 'none';
+    startBtn.classList.add('hidden');
+    stopBtn.classList.remove('hidden');
+    liveIndicator.className = 'status-dot danger';
+    liveLabel.textContent = 'LIVE';
+    statsInterval = setInterval(refreshStats, 2500);
+  });
+
+  stopBtn.addEventListener('click', () => {
+    feedImg.src = '';
+    feedWrapper.classList.add('hidden');
+    feedPlaceholder.style.display = '';
+    stopBtn.classList.add('hidden');
+    startBtn.classList.remove('hidden');
+    liveIndicator.className = 'status-dot warn';
+    liveLabel.textContent = 'STANDBY';
+    clearInterval(statsInterval);
+  });
+
+  async function refreshStats() {
+    try {
+      const data = await fetch('/api/webcam_stats').then(r => r.json());
+      const score = data.safety_score ?? 100;
+      const stats = data.activity_statistics || {};
+      const alerts = data.alerts || [];
+      const total = data.total_alerts ?? 0;
+
+      // Meter
+      updateMeter(score);
+
+      // Stats time
+      statsTime.textContent = new Date().toLocaleTimeString();
+      alertBadge.textContent = total;
+
+      // Activity table
+      const panel = document.getElementById('statsPanel');
+      const tableBody = entries => entries.map(([k,v]) => {
+        const mx = Math.max(...Object.values(stats), 1);
+        const pct = Math.round((v/mx)*100);
+        const colors = {Standing:'',Walking:'safe',Squatting:'warn',Lifting:'warn',Unsafe_Posture:'danger'};
+        return `
+          <tr>
+            <td style="font-size:0.82rem">${k.replace('_',' ')}</td>
+            <td>
+              <div class="act-bar-wrap" style="width:80px">
+                <div class="act-bar ${colors[k]||''}" style="width:${pct}%"></div>
+              </div>
+            </td>
+            <td class="mono" style="font-size:0.75rem;color:var(--text2)">${v}</td>
+          </tr>`;
+      }).join('');
+
+      panel.innerHTML = `
+        <div class="panel-header">
+          <span class="panel-title">Activity Stats</span>
+          <span class="mono" style="font-size:0.65rem;color:var(--text3)">${new Date().toLocaleTimeString()}</span>
+        </div>
+        <table class="act-table">
+          <tr><th>Activity</th><th>Rate</th><th>#</th></tr>
+          ${tableBody(Object.entries(stats))}
+        </table>`;
+
+      // Alerts
+      if (alerts.length > 0) {
+        alertFeed.innerHTML = alerts.slice(-4).reverse().map(a => `
+          <div class="alert-item">
+            <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <div class="alert-text">
+              <div class="alert-title">${a.activity} — Person #${a.person_id}</div>
+              <div class="alert-meta">Frame ${a.frame} · ${new Date(a.timestamp).toLocaleTimeString()}</div>
+            </div>
+          </div>`).join('');
+      }
+    } catch {}
+  }
+</script>
+</body>
+</html>
